@@ -4,9 +4,10 @@ import com.qualcomm.hardware.motors.NeveRest40Gearmotor;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.CRServo;
-
+//import com.github.pmtischler.control.Mecanum;
 
 /**
  * Created by Bhavik Sardar on 9/28/17.
@@ -20,34 +21,39 @@ public class T548Telep1617Sept extends OpMode {
     DcMotor rr;
     DcMotor lr;
     DcMotor lf;
+    DcMotor r1;
+    DcMotor l1;
     DcMotor LinearSlide;
     Servo glyphl;
     Servo glyphr;
+    Servo color;
     boolean slideMotorOn = false;
     double slideModeTimeStamp;
     boolean slideRetainingMode = false;
     boolean driveFoward = true;
     private void InitializeRobot() {
-        //lf = hardwareMap.dcMotor.get("LeftFront");
         rf = hardwareMap.dcMotor.get("RightFront");
         lr = hardwareMap.dcMotor.get("LeftBack");
         rr = hardwareMap.dcMotor.get("RightBack");
         lf = hardwareMap.dcMotor.get("LeftFront");
+        r1 = hardwareMap.dcMotor.get("GlyphRight");
+        r1 = hardwareMap.dcMotor.get("GlyphLeft");
         LinearSlide = hardwareMap.dcMotor.get("LinearSlide");
-        glyphl = hardwareMap.servo.get("GlyphLeft");
-        glyphr = hardwareMap.servo.get("GlyphRight");
+        color = hardwareMap.servo.get("ColorServo");
         rf.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         lf.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         rr.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         lr.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        final double maxPower = 1;
 
         // set power to zero to avoid a FTC bug
         rf.setPower(0);
         lf.setPower(0);
         lr.setPower(0);
         rr.setPower(0);
-        glyphl.setPosition(0.5);
-        glyphr.setPosition(0);
+        glyphl.setPosition(0.05);
+        glyphr.setPosition(0.9);
+        color.setPosition(1);
     }
 
     public void init() {
@@ -73,6 +79,14 @@ public class T548Telep1617Sept extends OpMode {
         return (gamepad1.right_stick_x);
     }
 
+    private double joy1DLT(){
+        return (gamepad1.left_trigger);
+    }
+
+    private double joy1DRT(){
+        return (gamepad1.right_trigger);
+    }
+
     private boolean joy1DL() {
         return (gamepad1.dpad_left || gamepad2.dpad_left);
     }
@@ -96,8 +110,18 @@ public class T548Telep1617Sept extends OpMode {
     }
 
     private boolean glyph(){
-        return (gamepad1.a);
+        return (gamepad2.a);
     }
+
+    private boolean pickUp(){
+        return (gamepad2.a);
+    }
+
+    private boolean keepIn(){
+        return (gamepad2.b);
+    }
+
+    private double straferight() {return (gamepad1.right_trigger);}
 
     public double scaleDrive(double x) {
         if (x < .1 && x > -.1) {
@@ -126,11 +150,11 @@ public class T548Telep1617Sept extends OpMode {
         }
 
         if(driveFoward) {
-            leftPower =scaleDrive(gamepad1.right_stick_y);
+            leftPower =scaleDrive(gamepad1.left_stick_y);
             rightPower = scaleDrive(gamepad1.left_stick_y);
         }
         else {
-            leftPower = scaleDrive(-gamepad1.right_stick_y);
+            leftPower = scaleDrive(-gamepad1.left_stick_y);
             rightPower = scaleDrive(-gamepad1.left_stick_y);
         }
 
@@ -144,8 +168,8 @@ public class T548Telep1617Sept extends OpMode {
     }
 
     public void translate(){
-        double r = Math.hypot(gamepad1.left_stick_x, gamepad1.left_stick_y);
-        double robotAngle = Math.atan2(gamepad1.left_stick_x, gamepad1.left_stick_y) - Math.PI / 4;
+        double r = Math.hypot(gamepad1.right_stick_x, gamepad1.right_stick_y);
+        double robotAngle = Math.atan2(gamepad1.right_stick_x, gamepad1.right_stick_y) - Math.PI / 4;
         double rightX = gamepad1.right_stick_x;
         final double v1 = r * Math.cos(robotAngle) + rightX;
         final double v2 = r * Math.sin(robotAngle) - rightX;
@@ -167,13 +191,12 @@ public class T548Telep1617Sept extends OpMode {
         joy1X = Math.abs(joy1X) > 0.15 ? joy1X*3/4: 0;
         double joy2X = gamepad1.right_stick_x;
         joy2X = Math.abs(joy2X) > 0.15 ? joy2X*3/4: 0;
+
         rf.setPower(Math.max(-maxPower, Math.min(maxPower, joy1Y + joy2X + joy1X)));
         lf.setPower(Math.max(-maxPower, Math.min(maxPower, joy1Y + joy2X - joy1X)));
         rr.setPower(Math.max(-maxPower, Math.min(maxPower, joy1Y - joy2X - joy1X)));
         lr.setPower(Math.max(-maxPower, Math.min(maxPower, joy1Y - joy2X + joy1X)));
-
     }
-
     public void glyphHold(){
         if (glyph()){
             glyphl.setPosition(0.6);
@@ -181,27 +204,42 @@ public class T548Telep1617Sept extends OpMode {
         }
 
         else {
-            glyphl.setPosition(0);
-            glyphr.setPosition(1);
+            glyphl.setPosition(0.05);
+            glyphr.setPosition(0.9);
         }
 
     }
 
+    public void pickUpGlyph(){
+        if(pickUp()){
+            r1.setPower(0.2);
+            l1.setDirection(DcMotor.Direction.REVERSE);
+            l1.setPower(0.2);
+        }
+    }
+
+    public void glyphStable(){
+        if(keepIn()){
+            r1.setPower(0.2);
+            l1.setPower(0.2);
+        }
+    }
+
     private void runLinearSlide() {
-        if (gamepad1.dpad_left == true) {
+        if (gamepad2.left_trigger == 1.0) {
             LinearSlide.setPower(-1);
             //slideRetainingMode = true;  // enter slide retaining mode
             slideMotorOn = false;
             slideModeTimeStamp = System.currentTimeMillis();
             //  telemetry.addData("Direction", "= up");
-        } else if (gamepad1.dpad_right == true) {
+        } else if (gamepad2.right_trigger == 1.0) {
             LinearSlide.setPower(.1);
         }
         else {
             LinearSlide.setPower(0);
         }
 
-        if (gamepad1.dpad_right == true) {
+        if (gamepad2.right_trigger == 1.0) {
             LinearSlide.setPower(.3);
             //slideRetainingMode = false;  // exit slide retaining mode
             //   telemetry.addData("Direction" , "= false");
@@ -231,14 +269,10 @@ public class T548Telep1617Sept extends OpMode {
 
     }
 
-
-
     //Main control function for Teleop
     public void loop() {
-        glyphHold();
-        drive();
         Mechanum();
-        runLinearSlide();
+        pickUpGlyph();
     }
 
 
