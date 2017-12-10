@@ -44,8 +44,11 @@ public class T548AutoNew extends LinearOpMode {
     DcMotor rr;
     DcMotor lr;
     DcMotor lf;
+    DcMotor r1;
+    DcMotor l1;
     Servo color;
     Servo jewel;
+    Servo glyphStopper;
     BNO055IMU imu;
     private boolean blueTeam = false;
     private boolean leftSide= false;
@@ -141,11 +144,32 @@ public class T548AutoNew extends LinearOpMode {
         RobotSleep(delayTimeInSec * 1000);
     }
 
+    private void PickUpGlyph(double Power) throws InterruptedException {
+        r1.setPower(Power);
+        l1.setPower(Power);
+    }
+
     // Timed drive function for forward, backward, left and right
     private void DriveByTime(double leftPower, double rightPower, int driveTime) throws InterruptedException {
         rf.setPower(rightPower);
         lf.setPower(leftPower);
         rr.setPower(rightPower);
+        lr.setPower(leftPower);
+        RobotSleep(driveTime);
+        rf.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        lf.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rr.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        lr.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rf.setPower(0);
+        lf.setPower(0);
+        rr.setPower(0);
+        lr.setPower(0);
+    }
+
+    private void RotateByTime(double leftPower, double rightPower, int driveTime) throws InterruptedException {
+        rf.setPower(-rightPower);
+        lf.setPower(leftPower);
+        rr.setPower(-rightPower);
         lr.setPower(leftPower);
         RobotSleep(driveTime);
         rf.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -699,16 +723,9 @@ public class T548AutoNew extends LinearOpMode {
         jsensor = hardwareMap.colorSensor.get("JewelSensor");
         color = hardwareMap.servo.get("ColorServo");
         jewel = hardwareMap.servo.get("JewelKnocker");
-        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
-        parameters.angleUnit = BNO055IMU.AngleUnit.DEGREES;
-        parameters.accelUnit = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
-        parameters.calibrationDataFile = "BNO055IMUCalibration.json";
-        parameters.loggingEnabled = true;
-        parameters.loggingTag = "IMU";
-        parameters.accelerationIntegrationAlgorithm = new JustLoggingAccelerationIntegrator();
-        imu = hardwareMap.get(BNO055IMU.class, "imu");
-        imu.initialize(parameters);
-
+        r1 = hardwareMap.dcMotor.get("GlyphRight");
+        l1 = hardwareMap.dcMotor.get("GlyphLeft");
+        glyphStopper = hardwareMap.servo.get("GlyphStopper");
 
 
         // Motor setup
@@ -726,8 +743,8 @@ public class T548AutoNew extends LinearOpMode {
         lf.setPower(0);
         lr.setPower(0);
         rr.setPower(0);
-        color.setPosition(1);
-        jewel.setPosition(0.5);
+        color.setPosition(0);
+        jewel.setPosition(1);
 
 
         // choose team color and delay start time
@@ -750,25 +767,23 @@ public class T548AutoNew extends LinearOpMode {
         if (beaconColor == BEACON_BLUE) {
             if (blueTeam) {
                 // Move to the position where the sensor were
-                DriveForwardByTime(0.2,2000);
+                jewel.setPosition(1);
                 color.setPosition(1);
             }
             else if(!blueTeam){
-                DriveBackwardByTime(0.2,2000);
-                RobotSleep(200);
+                jewel.setPosition(0.3);
                 color.setPosition(1);
             }
             RobotSleep(200);
         } else if (beaconColor == BEACON_RED) {
             // Beacon is red at sensing position
             if (blueTeam) {
-                DriveBackwardByTime(0.2,2000);
+                jewel.setPosition(0.3);
                 color.setPosition(1);
             } else if(!blueTeam){
                 // Move to the other button
-                DriveForwardByTime(0.2,2000);
+                jewel.setPosition(1);
                 color.setPosition(1);
-                RobotSleep(200);
             }
         } else {
             // undecided beacon color, don't prese any button
@@ -819,12 +834,26 @@ public class T548AutoNew extends LinearOpMode {
 
         InitializeRobot();
         waitForStart();
-        color.setPosition(0);
+        sleep(3000);
+        jewel.setPosition(0.7);
+        sleep(1000);
+        color.setPosition(1);
         sleep(3000);
         ReadColor();
-        DriveBackwardByTime(0.2,2000);
+        sleep(2000);
+        color.setPosition(0);
+       /* PickUpGlyph(0.2);
+        if(blueTeam){
+            DriveForwardByTime(0.2,1000);
+            RotateByTime(0.2,0.2,2000);
+            DriveForwardByTime(0.2,1000);
+            glyphStopper.setPosition(0.9);
+        }
+        else if(!blueTeam){
+            DriveBackwardByTime(0.2,1000);
+            RotateByTime(0.2,0.2,2000);
+            DriveForwardByTime(0.2,1000);
+            glyphStopper.setPosition(0.9);
+        }*/
     }
 }
-}
-
-
