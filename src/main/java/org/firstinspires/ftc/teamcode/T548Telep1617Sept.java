@@ -27,6 +27,7 @@ public class T548Telep1617Sept extends OpMode {
     Servo glyphl;
     Servo glyphr;
     Servo color;
+    Servo glyphStopper;
     boolean slideMotorOn = false;
     double slideModeTimeStamp;
     boolean slideRetainingMode = false;
@@ -37,13 +38,16 @@ public class T548Telep1617Sept extends OpMode {
         rr = hardwareMap.dcMotor.get("RightBack");
         lf = hardwareMap.dcMotor.get("LeftFront");
         r1 = hardwareMap.dcMotor.get("GlyphRight");
-        r1 = hardwareMap.dcMotor.get("GlyphLeft");
-        LinearSlide = hardwareMap.dcMotor.get("LinearSlide");
-        color = hardwareMap.servo.get("ColorServo");
+        l1 = hardwareMap.dcMotor.get("GlyphLeft");
+        glyphStopper = hardwareMap.servo.get("GlyphStopper");
+        //LinearSlide = hardwareMap.dcMotor.get("LinearSlide");
+        //color = hardwareMap.servo.get("ColorServo");
         rf.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         lf.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         rr.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         lr.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rr.setDirection(DcMotorSimple.Direction.REVERSE);
+        lr.setDirection(DcMotorSimple.Direction.REVERSE);
         final double maxPower = 1;
 
         // set power to zero to avoid a FTC bug
@@ -51,9 +55,8 @@ public class T548Telep1617Sept extends OpMode {
         lf.setPower(0);
         lr.setPower(0);
         rr.setPower(0);
-        glyphl.setPosition(0.05);
-        glyphr.setPosition(0.9);
-        color.setPosition(1);
+        glyphStopper.setPosition(0);
+        //color.setPosition(1);
     }
 
     public void init() {
@@ -212,18 +215,28 @@ public class T548Telep1617Sept extends OpMode {
 
     public void pickUpGlyph(){
         if(pickUp()){
-            r1.setPower(0.2);
+            r1.setPower(0.5);
             l1.setDirection(DcMotor.Direction.REVERSE);
-            l1.setPower(0.2);
+            l1.setPower(0.5);
         }
     }
 
     public void glyphStable(){
         if(keepIn()){
-            r1.setPower(0.2);
-            l1.setPower(0.2);
+            r1.setPower(0);
+            l1.setPower(0);
         }
     }
+
+    public void servoOff(){
+        if(gamepad2.right_trigger == 1){
+            glyphStopper.setPosition(0.9);
+        }
+        else {
+            glyphStopper.setPosition(0);
+        }
+    }
+
 
     private void runLinearSlide() {
         if (gamepad2.left_trigger == 1.0) {
@@ -273,8 +286,11 @@ public class T548Telep1617Sept extends OpMode {
     public void loop() {
         Mechanum();
         pickUpGlyph();
+        glyphStable();
+        servoOff();
     }
 
 
 }
+
 
