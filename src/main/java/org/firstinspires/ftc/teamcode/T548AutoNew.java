@@ -828,6 +828,28 @@ public class T548AutoNew extends LinearOpMode {
         } else {
         }
     }*/
+    private void claspGlyph() throws InterruptedException{
+        r1.setPower(0.5);
+        l1.setDirection(DcMotor.Direction.REVERSE);
+        l1.setPower(0.5);
+    }
+    //Release Glyph
+    private void releaseGlyph() throws InterruptedException{
+        glyphStopper.setPosition(1.0);
+    }
+    //Put Glyph into box
+    private void Touchdown() throws InterruptedException {
+        DriveForwardByTime(0.5,1000);
+        TurnLeftByTime(0.5,950 );
+        DriveBackwardByTime(0.5,600);
+        sleep(2000);
+        claspGlyph();
+        sleep(500);
+        DriveForwardByTime(0.5,500);
+        sleep(1000);
+        DriveBackwardByTime(0.5,500);
+
+    }
     // Team 548 Autonomous main program
     @Override
     public void runOpMode() throws InterruptedException{
